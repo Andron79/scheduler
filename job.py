@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Any
 from uuid import uuid4 as uid
 
 from settings import TIME_FORMAT
@@ -17,7 +17,7 @@ class Job:
             start_at: Optional[str] = None,
             max_working_time: Optional[float] = None,
             tries: int = 0,
-            dependencies: Optional[List[str]] = None
+            dependencies: Optional[list[Any]] | None = None
     ):
         self.start_at = datetime.strptime(start_at,
                                           TIME_FORMAT) if start_at else None
@@ -31,13 +31,12 @@ class Job:
 
         self.task = task()
         self.tries = tries
-        self.start_at = start_at
         self.max_working_time = max_working_time
-        self.dependencies = dependencies
+        self.dependencies = dependencies or []
         self.id = uid()
 
     def __str__(self):
-        return f'{self.task.__name__} id={self.id} start_at={self.start_at} tries={self.tries}'
+        return f'{self.task.__name__}, id={self.id}'
 
     def run(self):
         result = next(self.task)

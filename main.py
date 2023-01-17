@@ -1,22 +1,22 @@
 import logging
-from datetime import datetime
 
-from example import countdown, countup, countdown1
+from tasks import task_1, task_2, task_3
 from job import Job
 from scheduler import Scheduler
-from tasks import print_hellow, print_hellow1, make_and_delete_dirs, write_lines, hello
 
 logger = logging.getLogger(__name__)
 
 
 def main():
     scheduler = Scheduler()
-    job = Job(countdown, start_at='2023-01-13 17:47')  #, start_at=datetime(year=2023, month=1, day=13, hour=17, minute=28))
+    # job1 = Job(task_1)
+    # job2 = Job(task_2)
+    # job = Job(task_2, dependencies=[Job(task_1)])
+    # scheduler.schedule(job)
+    # job = Job(task_3, start_at='2023-01-17 12:56', max_working_time=3)
+    # scheduler.schedule(job)
+    job = Job(task_3, max_working_time=2)
     scheduler.schedule(job)
-    # job = Job(countdown1)
-    # scheduler.schedule(job)
-    # job = Job(countup)
-    # scheduler.schedule(job)
     scheduler.run()
 
 
