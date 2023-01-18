@@ -17,6 +17,7 @@ class Scheduler:
     def __init__(self, pool_size: int = MAX_TASKS_COUNT):
         self.pool_size = pool_size
         self._queue = deque()
+        self.msg: str = ""
 
     def queue_is_full(self):
         return True if len(self._queue) >= self.pool_size else False
@@ -33,6 +34,9 @@ class Scheduler:
             t.start()
             return False
 
+        # if task.tries:
+        #     logger.info(f"Задача {task} запущена с количеством повторений {task.tries} в случае неудачи")
+
         if task.dependencies:
             for dependency in task.dependencies:
                 self.schedule(dependency)
@@ -45,9 +49,10 @@ class Scheduler:
          Допускает новую запущенную задачу в планировщик
         """
         if self._queue:
+            # logger.info(self._queue)
             return self._queue.popleft()
 
-    def check_and_run_task(self, task: Job | None) -> None:
+    def check_and_run_task(self, task: Job | None) -> str | None:
 
         if self.queue_is_full():
             logger.error("Очередь заполнена")
@@ -57,7 +62,7 @@ class Scheduler:
             return
 
         if task.end_at and task.end_at < datetime.now():
-            logger.info(f"Задача {task} просрочена")
+            logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
             return
 
         if self.future_task(task):
@@ -71,13 +76,29 @@ class Scheduler:
                     self._queue.append(task)
                     return
 
+        if not task.success and task.tries > 0:
+            logger.info(f"Задача {task} {task.success} осталось попыток перезапуска {task.tries}")
+            task.tries -= 1
+            if task not in self._queue:
+                self._queue.append(task)
+
         try:
+            logger.info(f"Запускаем задачу {task}")
             result = task.run()
+            task.success = True
+
+        except ValueError as e:
+            task.success = False
+            logger.info(f"Задача {task} завершилась со статусом {task.success}")
+
         except StopIteration:
-            logger.info(f"Выполнение задачи {task} закончено")
+            logger.info(f"Задача {task} завершилась со статусом {task.success}")
             return
-        self._queue.append(task)
-        return result
+
+        # self._queue.append(task)
+        # logger.info(self._queue)
+        # logger.info(f"Задача {task} добавлена в очередь задач")
+        # return result
 
     def run(self) -> None:
         logger.info("Задачи запущены")
@@ -85,7 +106,7 @@ class Scheduler:
             try:
                 task = self.new_task()
                 self.check_and_run_task(task)
-                time.sleep(0.1)
+
             except KeyboardInterrupt:
                 logger.info('Пользователь остановил исполнение планировщика')
-                break
+                return

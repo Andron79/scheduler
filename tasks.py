@@ -4,29 +4,23 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def task_1(n: int = 10):
-    while n > 0:
-        # print('task_1', n)
-        yield
-        n -= 1
+def task_1():
+    print('task_1 started')
+    # raise ValueError('jhihuihui')
+    yield
+    # raise ValueError('jhihuihui')
     print('task_1 complete!')
 
 
-def task_2(n: int = 5):
-    x = 0
-    while x < n:
-        # print('task_2', x)
-        yield
-        x += 1
+def task_2():
+    print('task_2 started')
+    yield
+    raise ValueError
     print('task_2 complete')
 
 
-def task_3(n: int = 10):
-    # while n > 0:
-    #     # print('task_3', n)
-    #     yield
-    #     n -= 1
+def task_3():
     print('task_3 started')
-    time.sleep(5)
+    # time.sleep(5)
     yield
     print('task_3 complete')

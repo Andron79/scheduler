@@ -33,14 +33,14 @@ class Job:
         self.tries = tries
         self.max_working_time = max_working_time
         self.dependencies = dependencies or []
+        self.success = False
         self.id = uid()
 
     def __str__(self):
         return f'{self.task.__name__}, id={self.id}'
 
     def run(self):
-        result = next(self.task)
-        return result
+        return next(self.task)
 
     def pause(self):
         pass

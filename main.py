@@ -9,14 +9,14 @@ logger = logging.getLogger(__name__)
 
 def main():
     scheduler = Scheduler()
-    # job1 = Job(task_1)
-    # job2 = Job(task_2)
-    # job = Job(task_2, dependencies=[Job(task_1)])
+    # job = Job(task_2, dependencies=[Job(task_1)], tries=2)
     # scheduler.schedule(job)
-    # job = Job(task_3, start_at='2023-01-17 12:56', max_working_time=3)
+    # job = Job(task_3, start_at='2023-01-18 14:32')
     # scheduler.schedule(job)
-    job = Job(task_3, max_working_time=2)
+    job = Job(task_1, tries=3)
     scheduler.schedule(job)
+    # job = Job(task_3)
+    # scheduler.schedule(job)
     scheduler.run()
 
 
