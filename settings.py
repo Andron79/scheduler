@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)-8s [%(filename)s:%(module)s:%(funcName)s:%(lineno)d] %(message)s',
     stream=sys.stdout,
-    datefmt=TIME_FORMAT
+    # datefmt=TIME_FORMAT
 )
 logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
 logging.addLevelName(logging.WARNING, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.WARNING))

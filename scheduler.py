@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 import time
 from collections import deque
 import logging
@@ -23,36 +24,42 @@ class Scheduler:
         return True if len(self._queue) >= self.pool_size else False
 
     @staticmethod
-    def future_task(task):
+    def timetable_task(task):
         return True if task.start_at and task.start_at > datetime.now() else False
 
-    def schedule(self, task: Job):
-        if self.future_task(task):
+    def save_task(self, task: Job):
+        current_task = dict(task.__dict__)
+        del current_task['task']
+        # logger.error(current_task)
+        with open(f'{task.name}.lock', "ab") as f:
+            pickle.dump(current_task, f)
+        logger.info(f"Сохраненная задача : {task}")
+
+    def add_task(self, task: Job):
+        self.save_task(task)
+        if self.timetable_task(task):
             logger.info(f"Задача {task} ожидает старта в {task.start_at}")
             t = Timer((task.start_at - datetime.now()).total_seconds(),
                       self._queue.append, [task])
             t.start()
             return False
 
-        # if task.tries:
-        #     logger.info(f"Задача {task} запущена с количеством повторений {task.tries} в случае неудачи")
-
         if task.dependencies:
             for dependency in task.dependencies:
-                self.schedule(dependency)
+                logger.info(f"Задача {task} ожидает окончания выполнения зависимости {dependency}")
+                self.add_task(dependency)
 
         self._queue.append(task)
         return True
 
-    def new_task(self):
+    def get_task(self):
         """
          Допускает новую запущенную задачу в планировщик
         """
         if self._queue:
-            # logger.info(self._queue)
             return self._queue.popleft()
 
-    def check_and_run_task(self, task: Job | None) -> str | None:
+    def process_task(self, task: Job | None) -> str | None:
 
         if self.queue_is_full():
             logger.error("Очередь заполнена")
@@ -65,48 +72,36 @@ class Scheduler:
             logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
             return
 
-        if self.future_task(task):
+        if self.timetable_task(task):
             logger.info(f"Задача {task} просрочена")
             return
 
-        if task.dependencies:
-            for dependency in task.dependencies:
-                if dependency in self._queue:
-                    logger.info(f"Задача {task} ожидает окончания выполнения зависимости {dependency}")
-                    self._queue.append(task)
-                    return
-
-        if not task.success and task.tries > 0:
-            logger.info(f"Задача {task} {task.success} осталось попыток перезапуска {task.tries}")
+        if not task.error and task.tries >= 0:
+            logger.info(f"Задача {task} {task.error} осталось попыток перезапуска {task.tries}")
             task.tries -= 1
             if task not in self._queue:
                 self._queue.append(task)
 
         try:
-            logger.info(f"Запускаем задачу {task}")
+            with open(f'{task.name}.lock', 'rb') as f:
+                data = pickle.load(f)
+            logger.info(data)
             result = task.run()
+            logger.warning(result)
             task.success = True
 
-        except ValueError as e:
-            task.success = False
-            logger.info(f"Задача {task} завершилась со статусом {task.success}")
-
         except StopIteration:
-            logger.info(f"Задача {task} завершилась со статусом {task.success}")
+            self.save_task(task)
+            logger.info(f"Задача {task} завершена со статусом {task.success}!")
             return
-
-        # self._queue.append(task)
-        # logger.info(self._queue)
-        # logger.info(f"Задача {task} добавлена в очередь задач")
-        # return result
 
     def run(self) -> None:
         logger.info("Задачи запущены")
         while True:
             try:
-                task = self.new_task()
-                self.check_and_run_task(task)
-
+                task = self.get_task()
+                self.process_task(task)
+                time.sleep(0.1)
             except KeyboardInterrupt:
-                logger.info('Пользователь остановил исполнение планировщика')
+                logger.info('Пользователь остановил работу планировщика')
                 return

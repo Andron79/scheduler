@@ -34,16 +34,19 @@ class Job:
         self.max_working_time = max_working_time
         self.dependencies = dependencies or []
         self.success = False
+        self.complete = False
+        self.error = False
         self.id = uid()
+        self.name = task.__name__
 
     def __str__(self):
         return f'{self.task.__name__}, id={self.id}'
 
     def run(self):
-        return next(self.task)
-
-    def pause(self):
-        pass
-
-    def stop(self):
-        pass
+        result = next(self.task)
+        if isinstance(result, Exception):
+            logger.error('----------------------------------------------')
+            self.error = True
+            return self.error
+        self.error = False
+        return result
