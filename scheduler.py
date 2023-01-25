@@ -31,12 +31,12 @@ class Scheduler:
         current_task = dict(task.__dict__)
         del current_task['task']
         # logger.error(current_task)
-        with open(f'{task.name}.lock', "ab") as f:
+        with open(f'tasks/{task.name}.lock', "ab") as f:
             pickle.dump(current_task, f)
         logger.info(f"Сохраненная задача : {task}")
 
     def add_task(self, task: Job):
-        self.save_task(task)
+        # self.save_task(task)
         if self.timetable_task(task):
             logger.info(f"Задача {task} ожидает старта в {task.start_at}")
             t = Timer((task.start_at - datetime.now()).total_seconds(),
@@ -59,7 +59,7 @@ class Scheduler:
         if self._queue:
             return self._queue.popleft()
 
-    def process_task(self, task: Job | None) -> str | None:
+    def process_task(self, task: Job | None) -> Job | None:
 
         if self.queue_is_full():
             logger.error("Очередь заполнена")
@@ -93,7 +93,7 @@ class Scheduler:
         except StopIteration:
             self.save_task(task)
             logger.info(f"Задача {task} завершена со статусом {task.success}!")
-            return
+            return task
 
     def run(self) -> None:
         logger.info("Задачи запущены")

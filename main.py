@@ -1,6 +1,6 @@
 import logging
 
-from tasks import task_1, task_2, task_3
+from tasks import task_2, task_3
 from job import Job
 from scheduler import Scheduler
 
