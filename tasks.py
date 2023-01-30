@@ -1,5 +1,7 @@
+import json
 import logging
 import time
+from typing import Generator
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +16,19 @@ def task_2():
     logger.warning('task_2 started')
     yield
     logger.warning('task_2 complete')
+    yield
 
 
 def task_3():
     logger.warning('task_3 started')
-    time.sleep(10)
+    # time.sleep(10)
     # try:
     #     x = 1 / 0
-    # except ZeroDivisionError:
-    #     # raise ValueError('task_1_error')
-    #     yield ValueError('task_3_error')
-    yield
-
+    # except ZeroDivisionError as e:
+    #     return None
+    # yield
+    # tasks_json = {'a': 'b'}
+    # with open('task.json', 'w') as f:
+    #     json.dump(tasks_json, f)
     logger.warning('task_3 complete')
+    yield
