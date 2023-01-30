@@ -27,13 +27,13 @@ logger = logging.getLogger(__name__)
 #     return inner
 
 
-def coroutine(func):
-    def starter(*args, **kwargs):
-        gen = func(*args, **kwargs)
-        # logger.info(gen)
-        next(gen)
-        return gen
-    return starter
+# def coroutine(func):
+#     def starter(*args, **kwargs):
+#         gen = func(*args, **kwargs)
+#         # logger.info(gen)
+#         next(gen)
+#         return gen
+#     return starter
 
 
 class Scheduler:
@@ -92,18 +92,24 @@ class Scheduler:
         if self.timetable_task(task):
             logger.info(f"Задача {task} просрочена")
             return
-
-        if not task.status.ERROR and task.tries >= 0:
-            logger.info(f"Задача {task} {task.error} осталось попыток перезапуска {task.tries}")
-            task.tries -= 1
-            if task not in self._queue:
-                self._queue.append(task)
+        #
+        # if task.status.ERROR and task.tries >= 0:
+        #     logger.info(f"Задача {task} {task.error} осталось попыток перезапуска {task.tries}")
+        #     task.tries -= 1
+        #     if task not in self._queue:
+        #         self._queue.append(task)
+        #         # self.add_task(task)
+        #
+        # if task.status.IN_QUEUE:
+        #     logger.info(f"Задача {task} добавлена снова в очередь")
+        #     # task.tries -= 1
+        #     if task not in self._queue:
+        #         self.add_task(task)
+            # self._queue.append(task)
 
         try:
             logger.info(task.__dict__)
             result = task.run()
-            # task.status = Status.SUCCESS
-            # self._queue.append(task)
             task.status = Status.IN_QUEUE
 
         except StopIteration:
@@ -111,7 +117,9 @@ class Scheduler:
             logger.info(f"Задача {task} завершена со статусом {task.status}!")
             # self._queue.append(task)
             return task
-        # self._queue.append(task)
+        task.status = Status.IN_QUEUE
+        # task.status = Status.ERROR
+        self.add_task(task)
         # except Exception as err:
         #     logger.error(f'Job id={task.id} is fail with {err}')
         #     if task.tries > 0:

@@ -81,9 +81,9 @@ class Job:
     def run(self):
         try:
             return next(self.task(*self.args, **self.kwargs))
-        except StopIteration:
-            logger.info(f"Задача {self.task} завершена на 1 ексепшене")
-            return None
+        # except StopIteration:
+        #     logger.info(f"Задача {self.task} завершена на 1 ексепшене")
+        #     return None
 
         except Exception as e:
             logger.error(f'Ошибка выполнения задания {e}')
