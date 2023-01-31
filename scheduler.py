@@ -48,8 +48,8 @@ class Scheduler:
             for dependency in task.dependencies:
                 logger.info(f"Задача {task} ожидает окончания выполнения зависимости {dependency}")
                 self.add_task(dependency)
-
-        self._queue.append(task)
+        if task:
+            self._queue.append(task)
         return True
 
     def get_task(self):
@@ -77,23 +77,17 @@ class Scheduler:
             return
 
         if not task.error and task.tries >= 0:
-            logger.info(f"Задача {task} {task.error} осталось попыток перезапуска {task.tries}")
+            logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
             task.tries -= 1
             if task not in self._queue:
                 self._queue.append(task)
 
         try:
-            with open(f'{task.name}.lock', 'rb') as f:
-                data = pickle.load(f)
-            logger.info(data)
             result = task.run()
-            logger.warning(result)
-            task.success = True
-
         except StopIteration:
-            self.save_task(task)
             logger.info(f"Задача {task} завершена со статусом {task.success}!")
             return task
+        # self._queue.append(task)
 
     def run(self) -> None:
         logger.info("Задачи запущены")

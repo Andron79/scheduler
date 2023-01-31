@@ -39,14 +39,14 @@ class Job:
         self.id = uid()
         self.name = task.__name__
 
-    def __str__(self):
-        return f'{self.task.__name__}, id={self.id}'
+    # def __str__(self):
+    #     return f'{self.task.__name__}, id={self.id}'
 
     def run(self):
-        result = next(self.task)
-        if isinstance(result, Exception):
-            logger.error('----------------------------------------------')
-            self.error = True
-            return self.error
-        self.error = False
-        return result
+        try:
+            result = next(self.task)
+            return result
+        except Exception as e:
+            return None
+
+

@@ -14,7 +14,7 @@ def main():
 
     job = Job(task_2)
     scheduler.add_task(job)
-    job = Job(task_3, max_working_time=11)
+    job = Job(task_3)
     scheduler.add_task(job)
     # job = Job(task_3, tries=2)
     # scheduler.add_task(job)
