@@ -11,8 +11,8 @@ def main():
     scheduler = Scheduler()
 
     job = Job(task_2)
-    # scheduler.add_task(job)
-    # job = Job(task_3, dependencies=[Job(task_2)])
+    scheduler.add_task(job)
+    job = Job(task_3)
     scheduler.add_task(job)
     scheduler.run()
 

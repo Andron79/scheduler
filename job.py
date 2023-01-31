@@ -44,7 +44,7 @@ class Status(Enum):
 class Job:
     def __init__(
             self,
-            task: Callable,
+            task,
             start_at: Optional[str] = None,
             max_working_time: Optional[float] = None,
             tries: int = 0,
@@ -80,7 +80,8 @@ class Job:
 
     def run(self):
         try:
-            return next(self.task(*self.args, **self.kwargs))
+            return self.task(*self.args, **self.kwargs)
+            # return next(self.task)
         # except StopIteration:
         #     logger.info(f"Задача {self.task} завершена на 1 ексепшене")
         #     return None
@@ -88,6 +89,15 @@ class Job:
         except Exception as e:
             logger.error(f'Ошибка выполнения задания {e}')
             return None
+
+    def set_next_start_datetime(self) -> None:
+        """
+        Метод вычисляет новое время запуска Job если он не смог по какой-то причины быть
+        выполнен в свое время.
+
+        :return:
+        """
+        self.start_at += self.duration
 
     def dependencies_is_success(self) -> bool:
         """
@@ -98,3 +108,26 @@ class Job:
             if dependency.status != Status.SUCCESS:
                 return False
         return True
+
+    def check_dependencies_task_start_datetime(self):
+        """
+        Метод проверяет что время запуска зависимостей раньше чем у основного Job.
+
+        :return:
+        """
+        for dependencies_task in self.dependencies:
+            if dependencies_task.start_datetime > self.start_at:
+                self.start_at = dependencies_task.start_datetime + datetime.timedelta(
+                    minutes=1)
+
+    def __lt__(self, other) -> bool:
+        """
+        Метод переопределяет сортировку так чтоб в начале списка были Job с статусом in_queue и
+        ближайшим временем.
+
+        :param other:
+        :return:
+        """
+        if other.status.value != self.status.value:
+            return other.status.value > self.status.value
+        return other.start_at > self.start_at
