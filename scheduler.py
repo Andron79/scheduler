@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pickle
 import time
 from collections import deque
@@ -7,7 +8,8 @@ import logging
 from datetime import datetime
 from threading import Timer
 
-from job import Job
+from job import Job, Status
+from schema import TaskSchema
 from settings import MAX_TASKS_COUNT
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,6 @@ class Scheduler:
     def __init__(self, pool_size: int = MAX_TASKS_COUNT):
         self.pool_size = pool_size
         self._queue = deque()
-        self.msg: str = ""
 
     def queue_is_full(self):
         return True if len(self._queue) >= self.pool_size else False
@@ -27,16 +28,7 @@ class Scheduler:
     def timetable_task(task):
         return True if task.start_at and task.start_at > datetime.now() else False
 
-    def save_task(self, task: Job):
-        current_task = dict(task.__dict__)
-        del current_task['task']
-        # logger.error(current_task)
-        with open(f'tasks/{task.name}.lock', "ab") as f:
-            pickle.dump(current_task, f)
-        logger.info(f"Сохраненная задача : {task}")
-
     def add_task(self, task: Job):
-        # self.save_task(task)
         if self.timetable_task(task):
             logger.info(f"Задача {task} ожидает старта в {task.start_at}")
             t = Timer((task.start_at - datetime.now()).total_seconds(),
@@ -84,13 +76,20 @@ class Scheduler:
 
         try:
             result = task.run()
+            task.status = Status.IN_PROGRESS
         except StopIteration:
-            logger.info(f"Задача {task} завершена со статусом {task.success}!")
+            task.status = Status.SUCCESS
+            logger.info(f"Задача {task.name} завершена со статусом {task.status}!")
             return task
-        # self._queue.append(task)
+
+        except Exception as e:
+            task.status = Status.ERROR
+            logger.error(f'Задание {task.name} завершилось со статусом {task.status} - {e}')
+            self._queue.pop()
+            return
 
     def run(self) -> None:
-        logger.info("Задачи запущены")
+        logger.info("Планировщик запущен")
         while True:
             try:
                 task = self.get_task()
@@ -98,4 +97,20 @@ class Scheduler:
                 time.sleep(0.1)
             except KeyboardInterrupt:
                 logger.info('Пользователь остановил работу планировщика')
+                self.stop()
                 return
+
+    def stop(self) -> None:  # TODO
+        """
+        Метод останавливает работу планировщика.
+        :return:
+        """
+        tasks_json = []
+        for task in self._queue:
+            task_dict = task.__dict__
+            task_dict['dependencies'] = [x.__dict__ for x in task_dict['dependencies']]
+            tasks_json.append(TaskSchema.parse_obj(task.__dict__).json())
+            logger.info(task)
+        with open('data.json', 'w') as f:
+            json.dump(tasks_json, f)
+        logger.info('Состояние задач сохранено в файл')

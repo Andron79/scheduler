@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Optional, List, Callable, Any
 from uuid import uuid4 as uid
 
 from settings import TIME_FORMAT
 
 logger = logging.getLogger(__name__)
+
+
+class Status(Enum):
+    IN_QUEUE = 0
+    IN_PROGRESS = 1
+    SUCCESS = 2
+    ERROR = 3
 
 
 class Job:
@@ -36,17 +44,17 @@ class Job:
         self.success = False
         self.complete = False
         self.error = False
+        self.status = Status.IN_QUEUE
         self.id = uid()
         self.name = task.__name__
 
-    # def __str__(self):
-    #     return f'{self.task.__name__}, id={self.id}'
-
     def run(self):
-        try:
-            result = next(self.task)
-            return result
-        except Exception as e:
-            return None
-
-
+        # try:
+        # result = next(self.task)
+        return next(self.task)
+        # except StopIteration:
+        #     task.status = Status.SUCCESS
+        #     logger.info(f"Задача {task} завершена со статусом {task.success}!")
+        # except Exception as e:
+        #     # logger.error(f'Ошибка выполнения задания {e}')
+        #     return None
