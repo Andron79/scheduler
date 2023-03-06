@@ -21,9 +21,10 @@ def task_2():
     logger.warning('task_2 started')
     p = pathlib.Path()
     directory = pathlib.Path('data')
+    # directory.mkdir()
     print(directory.exists())
     yield
-    directory.mkdir(parents=False, exist_ok=False)
+    directory.rmdir()
     print(directory.exists())
     logger.warning('task_2 complete')
 
@@ -72,6 +73,7 @@ def source():
         print(f"Source: Отправлено {data}")
         output.send(data)
     output.close()
+    yield
 
 
 def api_exact_time():

@@ -40,9 +40,11 @@ class Scheduler:
             for dependency in task.dependencies:
                 logger.info(f"Задача {task} ожидает окончания выполнения зависимости {dependency}")
                 self.add_task(dependency)
+
         if task:
             self._queue.append(task)
-        return True
+            # task.status = Status.IN_QUEUE
+            return True
 
     def get_task(self):
         """
@@ -51,6 +53,12 @@ class Scheduler:
         if self._queue:
             return self._queue.popleft()
 
+    def exit(self, task):
+        if task.status != Status.ERROR:
+            task.status = Status.SUCCESS
+        logger.info(f'Задача {task.name} завершена со статусом {task.status.name}')
+        return
+
     def process_task(self, task: Job | None) -> Job | None:
 
         if self.queue_is_full():
@@ -58,7 +66,6 @@ class Scheduler:
             return
 
         if task is None:
-            # logger.info('no tasks')
             return
 
         if task.end_at and task.end_at < datetime.now():
@@ -69,25 +76,25 @@ class Scheduler:
             logger.info(f"Задача {task} просрочена")
             return
 
-        if task.status.ERROR and task.tries >= 0:
+        if task.status == Status.ERROR and task.tries >= 0:
             logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
             task.tries -= 1
             if task not in self._queue:
-                task.status = Status.IN_PROGRESS
-                self._queue.append(task)
+                self._queue.appendleft(task)
+                return
 
         try:
-            task.status = Status.IN_PROGRESS
             result = task.run()
         except StopIteration:
-            task.status = Status.SUCCESS
-            # logger.info(f"Задача {task.name} завершена со статусом {task.status}!")
-            return task
+            self.exit(task)
+            return
 
         except Exception as e:
             task.status = Status.ERROR
-            logger.error(f'Задание {task.name} завершилось со статусом {task.status} - {e}')
+            logger.error(f'Задание {task.name} завершилось со статусом {task.status.name} - {e}')
+            self.add_task(task)
             return
+        self.add_task(task)
 
     def run(self) -> None:
         logger.info("Планировщик запущен")
@@ -112,6 +119,6 @@ class Scheduler:
             task_dict['dependencies'] = [x.__dict__ for x in task_dict['dependencies']]
             tasks_json.append(TaskSchema.parse_obj(task.__dict__).json())
             logger.info(task)
-        with open('data.json', 'w') as f:
-            json.dump(tasks_json, f)
-        logger.info('Состояние задач сохранено в файл')
+        # with open('data.json', 'w') as f:
+        #     json.dump(tasks_json, f)
+        # logger.info('Состояние задач сохранено в файл')

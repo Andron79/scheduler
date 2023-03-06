@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional, List, Callable, Any
+from typing import Optional, Callable, Any
 from uuid import uuid4 as uid
 
 from settings import TIME_FORMAT
@@ -41,20 +41,9 @@ class Job:
         self.tries = tries
         self.max_working_time = max_working_time
         self.dependencies = dependencies or []
-        self.success = False
-        self.complete = False
-        self.error = False
-        self.status = Status
+        self.status = Status.IN_QUEUE
         self.id = uid()
         self.name = task.__name__
 
     def run(self):
-        # try:
-        # result = next(self.task)
         return next(self.task)
-        # except StopIteration:
-        #     task.status = Status.SUCCESS
-        #     logger.info(f"Задача {task} завершена со статусом {task.success}!")
-        # except Exception as e:
-        #     # logger.error(f'Ошибка выполнения задания {e}')
-        #     return None
