@@ -44,7 +44,7 @@ class Job:
         self.success = False
         self.complete = False
         self.error = False
-        self.status = Status.IN_QUEUE
+        self.status = Status
         self.id = uid()
         self.name = task.__name__
 

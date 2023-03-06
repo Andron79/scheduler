@@ -10,7 +10,10 @@ logger = logging.getLogger(__name__)
 
 def task_1():
     logger.warning('task_1 started')
-    yield ValueError('task_1_error')
+    # x = 1 / 0
+    yield
+    # raise ValueError('task_1_error')
+
     logger.warning('task_1 complete!')
 
 
@@ -75,3 +78,4 @@ def api_exact_time():
     response = requests.get("http://worldtimeapi.org/api/timezone/Europe/Moscow")
     logger.warning(response.json()['datetime'])
     yield
+    logger.warning('---------------------------')

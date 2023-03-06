@@ -58,6 +58,7 @@ class Scheduler:
             return
 
         if task is None:
+            # logger.info('no tasks')
             return
 
         if task.end_at and task.end_at < datetime.now():
@@ -68,24 +69,24 @@ class Scheduler:
             logger.info(f"Задача {task} просрочена")
             return
 
-        if not task.error and task.tries >= 0:
+        if task.status.ERROR and task.tries >= 0:
             logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
             task.tries -= 1
             if task not in self._queue:
+                task.status = Status.IN_PROGRESS
                 self._queue.append(task)
 
         try:
-            result = task.run()
             task.status = Status.IN_PROGRESS
+            result = task.run()
         except StopIteration:
             task.status = Status.SUCCESS
-            logger.info(f"Задача {task.name} завершена со статусом {task.status}!")
+            # logger.info(f"Задача {task.name} завершена со статусом {task.status}!")
             return task
 
         except Exception as e:
             task.status = Status.ERROR
             logger.error(f'Задание {task.name} завершилось со статусом {task.status} - {e}')
-            self._queue.pop()
             return
 
     def run(self) -> None:
