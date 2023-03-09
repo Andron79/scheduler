@@ -50,6 +50,9 @@ class Scheduler:
         """
          Допускает новую запущенную задачу в планировщик
         """
+        if not self._queue:
+            return None
+
         if self._queue:
             return self._queue.popleft()
 
@@ -94,7 +97,9 @@ class Scheduler:
             logger.error(f'Задание {task.name} завершилось со статусом {task.status.name} - {e}')
             self.add_task(task)
             return
-        self.add_task(task)
+        # self.add_task(task)
+        self._queue.append(task)
+        return result
 
     def run(self) -> None:
         logger.info("Планировщик запущен")

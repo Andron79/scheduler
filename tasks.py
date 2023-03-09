@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 def task_1():
     logger.warning('task_1 started')
     # x = 1 / 0
-    yield
+    time.sleep(10)
+    _ = (yield)
+    # yield
     # raise ValueError('task_1_error')
 
     logger.warning('task_1 complete!')
@@ -23,7 +25,8 @@ def task_2():
     directory = pathlib.Path('data')
     # directory.mkdir()
     print(directory.exists())
-    yield
+    _ = (yield)
+    # yield
     directory.rmdir()
     print(directory.exists())
     logger.warning('task_2 complete')
