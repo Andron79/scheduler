@@ -1,7 +1,6 @@
 import logging
 import time
 import pathlib
-from pprint import pprint
 
 import requests
 
@@ -10,10 +9,7 @@ logger = logging.getLogger(__name__)
 
 def task_1():
     logger.warning('task_1 started')
-    # x = 1 / 0
     yield
-    # raise ValueError('task_1_error')
-
     logger.warning('task_1 complete!')
 
 
@@ -21,11 +17,12 @@ def task_2():
     logger.warning('task_2 started')
     p = pathlib.Path()
     directory = pathlib.Path('data')
-    # directory.mkdir()
-    print(directory.exists())
+    directory.mkdir()
+    logger.info(f'Директорий существует {directory.exists()}')
     yield
-    directory.rmdir()
-    print(directory.exists())
+    if directory.exists():
+        directory.rmdir()
+        logger.info(f'Директорий существует {directory.exists()}')
     logger.warning('task_2 complete')
 
 
@@ -33,13 +30,6 @@ def task_3():
     logger.warning('task_3 started')
 
     p = pathlib.Path(__file__)
-    print(p)
-    # time.sleep(10)
-    # try:
-    # t = 1 / 0
-    # except ZeroDivisionError:
-    #     # raise ValueError('task_1_error')
-    #     yield ValueError('task_3_error')
     yield
 
     logger.warning('task_3 complete')
@@ -80,4 +70,4 @@ def api_exact_time():
     response = requests.get("http://worldtimeapi.org/api/timezone/Europe/Moscow")
     logger.warning(response.json()['datetime'])
     yield
-    logger.warning('---------------------------')
+    logger.warning('Задание api_exact_time завершено')

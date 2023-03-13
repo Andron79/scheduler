@@ -10,11 +10,11 @@ from job import Status
 
 class TaskSchemaModel(BaseModel):
     id: UUID
-    fn_name: str
-    args: list
-    kwargs: dict
-    start_datetime: datetime.datetime
-    max_working_time: Optional[int]
+    name: str
+    args: Optional[list] = None
+    kwargs: Optional[dict] = None
+    start_datetime: Optional[datetime.datetime] = None
+    max_working_time: Optional[int] = None
     tries: int
     status: Status
     dependencies: Optional[list[Any]]

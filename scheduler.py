@@ -6,6 +6,7 @@ import time
 from collections import deque
 import logging
 from datetime import datetime
+from pprint import pprint
 from threading import Timer
 
 from job import Job, Status
@@ -38,7 +39,7 @@ class Scheduler:
 
         if task.dependencies:
             for dependency in task.dependencies:
-                logger.info(f"Задача {task} ожидает окончания выполнения зависимости {dependency}")
+                logger.info(f"Задача {task.name} ожидает окончания выполнения зависимости {dependency.name}")
                 self.add_task(dependency)
 
         if task:
@@ -54,8 +55,8 @@ class Scheduler:
             return self._queue.popleft()
 
     def exit(self, task):
-        if task.status != Status.ERROR:
-            task.status = Status.SUCCESS
+        # if task.status != Status.ERROR:
+        #     task.status = Status.SUCCESS
         logger.info(f'Задача {task.name} завершена со статусом {task.status.name}')
         return
 
@@ -86,13 +87,13 @@ class Scheduler:
         try:
             result = task.run()
         except StopIteration:
+            task.status = Status.SUCCESS
             self.exit(task)
             return
 
         except Exception as e:
             task.status = Status.ERROR
             logger.error(f'Задание {task.name} завершилось со статусом {task.status.name} - {e}')
-            self.add_task(task)
             return
         self.add_task(task)
 
@@ -115,10 +116,12 @@ class Scheduler:
         """
         tasks_json = []
         for task in self._queue:
+            logger.info(f'{task.name} status {task.status}')
             task_dict = task.__dict__
             task_dict['dependencies'] = [x.__dict__ for x in task_dict['dependencies']]
             tasks_json.append(TaskSchema.parse_obj(task.__dict__).json())
-            logger.info(task)
-        # with open('data.json', 'w') as f:
-        #     json.dump(tasks_json, f)
-        # logger.info('Состояние задач сохранено в файл')
+            logger.error(TaskSchema.parse_obj(task.__dict__).json())
+        pprint(tasks_json)
+        with open('data.json', 'w') as f:
+            json.dump(tasks_json, f)
+        logger.info('Состояние задач сохранено в файл')
