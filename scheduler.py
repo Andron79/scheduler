@@ -99,6 +99,7 @@ class Scheduler:
 
     def run(self) -> None:
         logger.info("Планировщик запущен")
+        self.start()
         while True:
             try:
                 task = self.get_task()
@@ -111,7 +112,7 @@ class Scheduler:
 
     def stop(self) -> None:  # TODO
         """
-        Метод останавливает работу планировщика.
+        Метод останавливает работу планировщика и записывает невыполненные таски в файл.
         :return:
         """
         tasks_json = []
@@ -121,7 +122,17 @@ class Scheduler:
             task_dict['dependencies'] = [x.__dict__ for x in task_dict['dependencies']]
             tasks_json.append(TaskSchema.parse_obj(task.__dict__).json())
             logger.error(TaskSchema.parse_obj(task.__dict__).json())
-        pprint(tasks_json)
+        # pprint(tasks_json)
         with open('data.json', 'w') as f:
             json.dump(tasks_json, f)
         logger.info('Состояние задач сохранено в файл')
+
+    # @staticmethod
+    def start(self) -> None:
+        with open('data.json', 'r') as f:
+            tasks_data = json.load(f)
+            for task in tasks_data:
+                job = Job(task)
+                self.add_task(job)
+        logger.info('Состояние задач прочитано из файла')
+        pprint(tasks_data)
