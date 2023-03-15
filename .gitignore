@@ -5,4 +5,4 @@ __pycache__/
 venv
 example.py
 /data
-data.json
+saved_tasks.lock

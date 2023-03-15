@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import json
+import os
 import pickle
 import time
 from collections import deque
 import logging
 from datetime import datetime
-from pprint import pprint
 from threading import Timer
 
 from job import Job, Status
-from schema import TaskSchema
-from settings import MAX_TASKS_COUNT
+from settings import MAX_TASKS_COUNT, SAVED_TASKS_FILE
+from tasks import worker_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,8 @@ class Scheduler:
         if self._queue:
             return self._queue.popleft()
 
-    def exit(self, task):
+    @staticmethod
+    def exit(task):
         # if task.status != Status.ERROR:
         #     task.status = Status.SUCCESS
         logger.info(f'Задача {task.name} завершена со статусом {task.status.name}')
@@ -110,29 +110,33 @@ class Scheduler:
                 self.stop()
                 return
 
-    def stop(self) -> None:  # TODO
+    def stop(self) -> None:
         """
         Метод останавливает работу планировщика и записывает невыполненные таски в файл.
         :return:
         """
-        tasks_json = []
+        tasks_to_save = []
         for task in self._queue:
-            logger.info(f'{task.name} status {task.status}')
             task_dict = task.__dict__
+            task_dict['task'] = str(task.name)
             task_dict['dependencies'] = [x.__dict__ for x in task_dict['dependencies']]
-            tasks_json.append(TaskSchema.parse_obj(task.__dict__).json())
-            logger.error(TaskSchema.parse_obj(task.__dict__).json())
-        # pprint(tasks_json)
-        with open('data.json', 'w') as f:
-            json.dump(tasks_json, f)
-        logger.info('Состояние задач сохранено в файл')
+            tasks_to_save.append(task_dict)
+        with open(SAVED_TASKS_FILE, 'wb') as f:
+            pickle.dump(tasks_to_save, f)
+            logger.info('Состояние задач сохранено в файл')
 
-    # @staticmethod
     def start(self) -> None:
-        with open('data.json', 'r') as f:
-            tasks_data = json.load(f)
-            for task in tasks_data:
-                job = Job(task)
-                self.add_task(job)
-        logger.info('Состояние задач прочитано из файла')
-        pprint(tasks_data)
+        """
+        Метод читает из файла невыполненные таски и добавляет их в очередь на выполнение.
+        :return:
+        """
+        if os.path.exists(SAVED_TASKS_FILE):
+            with open('saved_tasks.lock', 'rb') as f:
+                tasks_data = pickle.load(f)
+                if tasks_data:
+                    for task in tasks_data:
+                        job = Job(
+                            task=worker_tasks.get(task['name'])
+                        )
+                        self.add_task(job)
+            logger.info('Состояние задач прочитано из файла')

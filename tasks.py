@@ -17,7 +17,8 @@ def task_2():
     logger.warning('task_2 started')
     p = pathlib.Path()
     directory = pathlib.Path('data')
-    directory.mkdir()
+    if not directory.exists():
+        directory.mkdir()
     logger.info(f'Директорий существует {directory.exists()}')
     yield
     if directory.exists():
@@ -71,3 +72,14 @@ def api_exact_time():
     logger.warning(response.json()['datetime'])
     yield
     logger.warning('Задание api_exact_time завершено')
+
+
+worker_tasks = {
+    'task_1': task_1,
+    'task_2': task_2,
+    'task_3': task_3,
+    'target': target,
+    'pipe': pipe,
+    'source': source,
+    'api_exact_time': api_exact_time,
+}
