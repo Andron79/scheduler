@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional, Callable, Any
-from uuid import uuid4 as uid
 
 from settings import TIME_FORMAT
 
@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 
 class Status(Enum):
     IN_QUEUE = 0
-    IN_PROGRESS = 1
-    SUCCESS = 2
-    ERROR = 3
+    SUCCESS = 1
+    ERROR = 2
 
 
 class Job:
@@ -37,13 +36,18 @@ class Job:
         else:
             self.end_at = None
 
-        self.task = task()
-        self.tries = tries
-        self.max_working_time = max_working_time
-        self.dependencies = dependencies or []
-        self.status = Status.IN_QUEUE
-        self.id = uid()
-        self.name = task.__name__
+        self.task: Any = task()
+        self.tries: Optional[int] = tries
+        self.max_working_time: Optional[float] = max_working_time
+        self.dependencies: Optional[list[Any]] = dependencies or []
+        self.status: Status = Status.IN_QUEUE
+        self.name: str = task.__name__
 
     def run(self):
+
+        # if self.end_at and self.end_at < datetime.now():
+        #     logger.info(f"Задача {self.task} остановлена, время исполнения превысило {self.task.max_working_time} cek.")
+        #     return
+
+
         return next(self.task)

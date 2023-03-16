@@ -9,17 +9,20 @@ logger = logging.getLogger(__name__)
 
 def main():
     scheduler = Scheduler()
-    job = Job(task_2, tries=1)
-    scheduler.add_task(job)
-    job = Job(task_1, tries=2)
-    scheduler.add_task(job)
-    job = Job(source)
-    scheduler.add_task(job)
-    job = Job(api_exact_time, tries=2)
+    job = Job(task_1, max_working_time=3)
     scheduler.add_task(job)
 
-    job = Job(task_1, dependencies=[Job(task_3)], tries=6)
-    scheduler.add_task(job)
+    # job = Job(task_2, tries=1)
+    # scheduler.add_task(job)
+    # job = Job(task_1, tries=2)
+    # scheduler.add_task(job)
+    # job = Job(source)
+    # scheduler.add_task(job)
+    # job = Job(api_exact_time, tries=2)
+    # scheduler.add_task(job)
+    #
+    # job = Job(task_1, dependencies=[Job(task_3)], tries=6)
+    # scheduler.add_task(job)
     scheduler.run()
 
 
