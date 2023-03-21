@@ -5,9 +5,9 @@ import pickle
 import time
 from collections import deque
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Timer
-from typing import Iterable, Type, Union
+from typing import Iterable, Type, Union, Any
 
 from job import Job, Status
 from settings import MAX_TASKS_COUNT, SAVED_TASKS_FILE
@@ -21,43 +21,72 @@ class Scheduler:
     def __init__(self, pool_size: int = MAX_TASKS_COUNT):
         self.pool_size: int = pool_size
         self._queue: deque = deque()
+        self.now = datetime.now()
 
     def queue_is_full(self) -> bool:
         return True if len(self._queue) >= self.pool_size else False
 
-    @staticmethod
-    def timetable_task(task) -> bool:
-        return True if task.start_at and task.start_at > datetime.now() else False
+    def deferred_task(self, task) -> bool:
+        """
+         Проверяет, является ли задача отложенной.
+        """
+        return True if task.start_at and task.start_at > self.now else False
+
+    def expired_task(self, task):
+        """
+         Проверяет, является ли задача просроченной.
+        """
+        return True if task.start_at and task.start_at < self.now else False
 
     def add_task(self, task: Job) -> Union[bool, None]:
         """
          Добавляет новую задачу в очередь, устанавливает параметры задачи.
         """
-        if self.timetable_task(task):
-            logger.info(f"Задача {task} ожидает старта в {task.start_at}")
+        if self.deferred_task(task):
+            logger.info(f"Задача {task.name} ожидает старта в {task.start_at}")
+            task.status = Status.IN_QUEUE
+            # self._time_queue.append(task)
             t = Timer((task.start_at - datetime.now()).total_seconds(),
                       self._queue.append, [task])
             t.start()
-            return False
+            # self._time_queue.append(task)
+            return
 
         if task.dependencies:
             for dependency in task.dependencies:
                 logger.info(f"Задача {task.name} ожидает окончания выполнения зависимости {dependency.name}")
                 self.add_task(dependency)
 
+        # if task.start_at and task.start_at < datetime.now():
+        #     logger.info(f"Задача {task.name} просрочена и исполняться не будет")
+        #     return
+
         if task:
+            if self.expired_task(task):
+                logger.info(f"Задача {task.name} просрочена и исполняться не будет")
+                return
             self._queue.append(task)
+            logger.info(f'Задача {task.name} добавлена в очередь')
             task.status = Status.IN_QUEUE
             return True
 
-    def get_task(self) -> Union[Job, Type[KeyboardInterrupt]]:
+    def get_task(self) -> Union[Any, None, Type[KeyboardInterrupt]]:
         """
          Допускает новую запущенную задачу в событийный цикл, а если задач нет, останавливает планировщик.
         """
+        now = datetime.now()
+        # logger.info(now)
+
         if self._queue:
-            return self._queue.popleft()
-        else:
-            raise KeyboardInterrupt
+            task = self._queue.popleft()
+
+            if task.max_working_time and (now + timedelta(seconds=task.max_working_time)) > datetime.now():
+                aaa = (now + timedelta(seconds=task.max_working_time)).timestamp() - now.timestamp()
+                logger.info(aaa)
+                # if task.end_at and task.end_at < datetime.now():
+                logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
+                return
+            return task
 
     def process_task(self, task: Union[Job, None]) -> None:
         """
@@ -71,9 +100,14 @@ class Scheduler:
         if task is None:
             return
 
-        if task.end_at and task.end_at < datetime.now():
-            logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
-            return
+        # if task.max_working_time and (datetime.now() + timedelta(seconds=task.max_working_time)) >= datetime.now():
+        #     # if task.end_at and task.end_at < datetime.now():
+        #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
+        #     return
+
+        # if task.end_at and task.end_at < datetime.now():
+        #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
+        #     return
 
         # datetime.now() + self.duration
         # end_at = datetime.now() + self.duration
@@ -83,9 +117,9 @@ class Scheduler:
         #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
         #     return
 
-        if self.timetable_task(task):
-            logger.info(f"Задача {task} просрочена")
-            return
+        # if self.deferred_task(task):
+        #     logger.info(f"Задача {task.name} просрочена")
+        #     return
 
         if task.status == Status.ERROR and task.tries >= 0:
             logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
@@ -113,7 +147,7 @@ class Scheduler:
          Событийный цикл.
         """
         logger.info("Планировщик запущен")
-        # time.sleep(10)
+        # time.sleep(7)
         self.start()
         while True:
             try:
@@ -131,6 +165,7 @@ class Scheduler:
         :return:
         """
         tasks_to_save = []
+        logger.info(len(self._queue))
         for task in self._queue:
             task_dict = task.__dict__
             task_dict['task'] = str(task.name)

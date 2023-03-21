@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 
 def task_1() -> None:
     logger.warning('task_1 started')
-    time.sleep(5)
+    time.sleep(2)
     yield
+    time.sleep(4)
     logger.warning('task_1 complete!')
 
 
@@ -21,11 +22,11 @@ def task_2() -> None:
     directory = pathlib.Path('data')
     if not directory.exists():
         directory.mkdir()
-    logger.info(f'Директорий существует {directory.exists()}')
+    logger.warning(f'Директорий существует {directory.exists()}')
     yield
     if directory.exists():
         directory.rmdir()
-        logger.info(f'Директорий существует {directory.exists()}')
+        logger.warning(f'Директорий существует {directory.exists()}')
     logger.warning('task_2 complete')
 
 

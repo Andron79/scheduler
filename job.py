@@ -15,6 +15,7 @@ class Status(Enum):
     IN_QUEUE = 0
     SUCCESS = 1
     ERROR = 2
+    EXPIRED = 3
 
 
 class Job:
@@ -29,12 +30,12 @@ class Job:
         self.start_at = datetime.strptime(start_at,
                                           TIME_FORMAT) if start_at else None
         self.duration = timedelta(seconds=max_working_time) if max_working_time else None
-        if start_at and max_working_time:
-            self.end_at = self.start_at + self.duration
-        elif max_working_time:
-            self.end_at = datetime.now() + self.duration
-        else:
-            self.end_at = None
+        # if start_at and max_working_time:
+        #     self.end_at = self.start_at + self.duration
+        # elif max_working_time:
+        #     self.end_at = datetime.now() + self.duration
+        # else:
+        #     self.end_at = None
 
         self.task: Any = task()
         self.tries: Optional[int] = tries
@@ -44,10 +45,5 @@ class Job:
         self.name: str = task.__name__
 
     def run(self):
-
-        # if self.end_at and self.end_at < datetime.now():
-        #     logger.info(f"Задача {self.task} остановлена, время исполнения превысило {self.task.max_working_time} cek.")
-        #     return
-
-
-        return next(self.task)
+        result = next(self.task)
+        return result
