@@ -75,7 +75,7 @@ class Scheduler:
          Допускает новую запущенную задачу в событийный цикл, а если задач нет, останавливает планировщик.
         """
         now = datetime.now()
-        # logger.info(now)
+        logger.info(now)
 
         if self._queue:
             task = self._queue.popleft()
