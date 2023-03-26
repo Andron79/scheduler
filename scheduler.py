@@ -56,6 +56,7 @@ class Scheduler:
             for dependency in task.dependencies:
                 logger.info(f"Задача {task.name} ожидает окончания выполнения зависимости {dependency.name}")
                 self.add_task(dependency)
+            # return
 
         # if task.start_at and task.start_at < datetime.now():
         #     logger.info(f"Задача {task.name} просрочена и исполняться не будет")
@@ -65,6 +66,10 @@ class Scheduler:
             if self.expired_task(task):
                 logger.info(f"Задача {task.name} просрочена и исполняться не будет")
                 return
+            # if task.dependencies:
+            #     return
+            # if task.status == Status.ERROR and task.tries <= 0:
+            #     return
             self._queue.append(task)
             logger.info(f'Задача {task.name} добавлена в очередь')
             task.status = Status.IN_QUEUE
@@ -75,7 +80,7 @@ class Scheduler:
          Допускает новую запущенную задачу в событийный цикл, а если задач нет, останавливает планировщик.
         """
         now = datetime.now()
-        logger.info(now)
+        # logger.info(now)
 
         if self._queue:
             task = self._queue.popleft()
@@ -121,12 +126,15 @@ class Scheduler:
         #     logger.info(f"Задача {task.name} просрочена")
         #     return
 
-        if task.status == Status.ERROR and task.tries >= 0:
-            logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
-            task.tries -= 1
-            if task not in self._queue:
-                self._queue.appendleft(task)
-                return
+        # if task.status == Status.ERROR and task.tries >= 0:
+        #     task.tries -= 1
+        #     logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
+        #
+        #     if task not in self._queue:
+        #         logger.info(self._queue)
+        #         self._queue.appendleft(task)
+        #         logger.info(self._queue)
+        #         return
 
         try:
             result = task.run()
@@ -136,8 +144,30 @@ class Scheduler:
             return
 
         except Exception as e:
-            task.status = Status.ERROR
+            # task.status = Status.ERROR
             logger.error(f'Задание {task.name} завершилось со статусом {task.status.name} - {e}')
+            if task.tries > 0:
+
+                logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
+                task.tries -= 1
+                job = Job(
+                    task=worker_tasks.get(task.name),
+                    tries=task.tries
+                )
+                self.add_task(job)
+                task.status = Status.IN_QUEUE
+            else:
+                task.status = Status.ERROR
+                logger.info('------------------')
+
+            # if task.status == Status.ERROR and task.tries >= 0:
+            #     task.tries -= 1
+            #     logger.info(f"Задача {task.name} осталось попыток перезапуска {task.tries}")
+            #
+            #     if task not in self._queue:
+            #         logger.info(task.name)
+            #         self._queue.appendleft(task)
+            #         return
             return
         self.add_task(task)
         return result

@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 def task_1() -> None:
     logger.warning('task_1 started')
     time.sleep(2)
+    x = 1/0
     yield
-    time.sleep(4)
+    # time.sleep(4)
     logger.warning('task_1 complete!')
 
 
