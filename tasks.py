@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 def task_1() -> None:
     logger.warning('task_1 started')
-    time.sleep(2)
-    x = 1/0
+    # time.sleep(2)
+    x = 1 / 0
     yield
     # time.sleep(4)
     logger.warning('task_1 complete!')
@@ -19,7 +19,7 @@ def task_1() -> None:
 
 def task_2() -> None:
     logger.warning('task_2 started')
-    p = pathlib.Path()
+    # p = pathlib.Path()
     directory = pathlib.Path('data')
     if not directory.exists():
         directory.mkdir()
@@ -33,40 +33,41 @@ def task_2() -> None:
 
 def task_3() -> None:
     logger.warning('task_3 started')
-
-    p = pathlib.Path(__file__)
     yield
-
     logger.warning('task_3 complete')
 
 
-def target() -> Generator:
+def stage_3() -> Generator:
+    aa = (yield)
     try:
         while True:
             data_chunk = (yield)
-            print(f"Target: Получено {data_chunk}")
+            print(f"Stage_3: Получено {data_chunk}")
+            return data_chunk
+            # yield data_chunk
     except GeneratorExit:
-        print("Target: Завершение")
+        print("Stage_3: Завершение фабрики")
+        return aa
 
 
-def pipe() -> Generator:
-    output = target()
+def stage_2() -> Generator:
+    output = stage_3()
     output.send(None)
     try:
         while True:
             data_chunk = (yield)
-            print(f"Pipe: Обработка {data_chunk}")
+            print(f"Stage_2: Обработка {data_chunk}")
             output.send(data_chunk * 2)
     except GeneratorExit:
         pass
 
 
-def source() -> None:
-    output = pipe()
+def stage_1() -> None:
+    output = stage_2()
     output.send(None)
-    for data in range(5):
-        print(f"Source: Отправлено {data}")
-        output.send(data)
+    data = 10
+    print(f"Stage_1: Отправлено {data}")
+    output.send(data)
     output.close()
     yield
 
@@ -82,8 +83,8 @@ worker_tasks = {
     'task_1': task_1,
     'task_2': task_2,
     'task_3': task_3,
-    'target': target,
-    'pipe': pipe,
-    'source': source,
+    'stage_3': stage_3,
+    'stage_2': stage_2,
+    'stage_1': stage_1,
     'api_exact_time': api_exact_time,
 }
