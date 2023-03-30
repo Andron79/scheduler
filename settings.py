@@ -2,7 +2,7 @@ import logging
 import sys
 
 # Максимальное количество задач для планировщика
-MAX_TASKS_COUNT = 100
+MAX_TASKS_COUNT = 10
 
 # файл для сохранения не выполненных тасков
 SAVED_TASKS_FILE = 'saved_tasks.lock'

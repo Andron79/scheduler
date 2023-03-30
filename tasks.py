@@ -27,14 +27,7 @@ def task_2() -> None:
     logger.warning('task_2 complete')
 
 
-def task_3() -> None:
-    logger.warning('task_3 started')
-    yield
-    logger.warning('task_3 complete')
-
-
 def stage_3() -> Generator:
-    aa = (yield)
     try:
         while True:
             data_chunk = (yield)
@@ -76,7 +69,6 @@ def api_exact_time() -> None:
 worker_tasks = {
     'task_1': task_1,
     'task_2': task_2,
-    'task_3': task_3,
     'stage_3': stage_3,
     'stage_2': stage_2,
     'job_factory': job_factory,

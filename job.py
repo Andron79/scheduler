@@ -36,12 +36,12 @@ class Job:
         Job.task_id += 1
         self.tid = Job.task_id
 
-        # if start_at and max_working_time:
-        #     self.end_at = self.start_at + self.duration
-        # elif max_working_time:
-        #     self.end_at = datetime.now() + self.duration
-        # else:
-        #     self.end_at = None
+        if start_at and max_working_time:
+            self.end_at = self.start_at + self.duration
+        elif max_working_time:
+            self.end_at = datetime.now() + self.duration
+        else:
+            self.end_at = None
 
         self.task: Any = task()
         self.tries: Optional[int] = tries
@@ -51,11 +51,7 @@ class Job:
         self.name: str = task.__name__
 
     def run(self):
-        # result = next(self.task)
         result = self.task
-
-        # result = self.task.send(self.sendval)
-
         return result
 
     def task_dependencies_is_complete(self) -> bool:
@@ -63,7 +59,6 @@ class Job:
         Метод проверяет что все зависимости у задачи выполнены.
         :return:
         """
-        # return all([dependency.status for dependency in self.dependencies])
         for dependency in self.dependencies:
             if dependency.status == Status.SUCCESS:
                 continue

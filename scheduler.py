@@ -6,25 +6,14 @@ import time
 from collections import deque
 import logging
 from datetime import datetime, timedelta
-from functools import wraps
 from threading import Timer
-from typing import Iterable, Type, Union, Any
+from typing import Type, Union, Any
 
 from job import Job, Status
 from settings import MAX_TASKS_COUNT, SAVED_TASKS_FILE
 from tasks import worker_tasks
 
 logger = logging.getLogger(__name__)
-
-
-# def coroutine(func):
-#     @wraps(func)
-#     def inner(*args, **kwargs):
-#         fn = func(*args, **kwargs)
-#         fn.send(None)
-#         return fn
-#
-#     return inner
 
 
 class Scheduler:
@@ -54,7 +43,6 @@ class Scheduler:
         """
          Добавляет новую задачу в очередь, устанавливает параметры задачи.
         """
-
         if self.deferred_task(task):
             logger.info(f"Задача {task.name} ожидает старта в {task.start_at}")
             task.status = Status.IN_QUEUE
@@ -71,37 +59,28 @@ class Scheduler:
             self._queue.append(task)
             return
 
-        # if task:
         if self.expired_task(task):
             logger.info(f"Задача {task.name} просрочена и исполняться не будет")
             return
 
         if task.status == Status.ERROR:
             return
+
         self._queue.append(task)
         logger.info(f'Задача {task.name} добавлена в очередь')
         task.status = Status.IN_QUEUE
+
         return True
 
     def get_task(self) -> Union[Any, None, Type[KeyboardInterrupt]]:
         """
-         Допускает новую запущенную задачу в событийный цикл, а если задач нет, останавливает планировщик.
+         Допускает новую запущенную задачу в цикл планировщика.
         """
-        now = datetime.now()
-        # logger.info(now)
 
         if self._queue:
             task = self._queue.popleft()
-
-            if task.max_working_time and (now + timedelta(seconds=task.max_working_time)) > datetime.now():
-                aaa = (now + timedelta(seconds=task.max_working_time)).timestamp() - now.timestamp()
-                logger.info(aaa)
-                # if task.end_at and task.end_at < datetime.now():
-                logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
-                return
             return task
 
-    # @coroutine
     def process_task_once(self, task: Union[Job, None]) -> None:
         """
          Подготовка и запуск задачи.
@@ -113,22 +92,10 @@ class Scheduler:
         if task is None:
             return
 
-        if task.max_working_time and (datetime.now() + timedelta(seconds=task.max_working_time)) >= datetime.now():
-            # if task.end_at and task.end_at < datetime.now():
-            logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
+        if task.end_at and (self.now + timedelta(seconds=task.max_working_time)) < datetime.now():
+            logger.info(
+                f"Задача {task} - id: {task.tid} - {task.duration} остановлена, время исполнения превысило {task.max_working_time} cek.")
             return
-
-        # if task.end_at and task.end_at < datetime.now():
-        #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
-        #     return
-
-        # datetime.now() + self.duration
-        # end_at = datetime.now() + self.duration
-
-        # task_end_at = datetime.now() + task.duration
-        # if task.max_working_time and (datetime.now() + task.duration) < task_end_at:
-        #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
-        #     return
 
         try:
             result = next(task.run())
@@ -152,7 +119,7 @@ class Scheduler:
             else:
                 task.status = Status.ERROR
                 logger.info(f"Задача {task.name} снята")
-                # self._queue.pop()
+                self._queue.popleft()
         self.add_task(task)
         task.status = Status.IN_QUEUE
         return
@@ -179,7 +146,6 @@ class Scheduler:
         :return:
         """
         tasks_to_save = []
-        logger.info(len(self._queue))
         for task in self._queue:
             task_dict = task.__dict__
             task_dict['task'] = str(task.name)
