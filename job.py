@@ -16,10 +16,12 @@ class Status(Enum):
     SUCCESS = 1
     ERROR = 2
     EXPIRED = 3
-    WAITING = 4
+    IN_PROGRESS = 4
 
 
 class Job:
+    task_id = 0
+
     def __init__(
             self,
             task: Callable,
@@ -31,7 +33,9 @@ class Job:
         self.start_at = datetime.strptime(start_at,
                                           TIME_FORMAT) if start_at else None
         self.duration = timedelta(seconds=max_working_time) if max_working_time else None
-        # self.sendval = None
+        Job.task_id += 1
+        self.tid = Job.task_id
+
         # if start_at and max_working_time:
         #     self.end_at = self.start_at + self.duration
         # elif max_working_time:

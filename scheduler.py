@@ -55,7 +55,6 @@ class Scheduler:
          Добавляет новую задачу в очередь, устанавливает параметры задачи.
         """
 
-
         if self.deferred_task(task):
             logger.info(f"Задача {task.name} ожидает старта в {task.start_at}")
             task.status = Status.IN_QUEUE
@@ -103,7 +102,7 @@ class Scheduler:
             return task
 
     # @coroutine
-    def process_task(self, task: Union[Job, None]) -> None:
+    def process_task_once(self, task: Union[Job, None]) -> None:
         """
          Подготовка и запуск задачи.
         """
@@ -114,10 +113,10 @@ class Scheduler:
         if task is None:
             return
 
-        # if task.max_working_time and (datetime.now() + timedelta(seconds=task.max_working_time)) >= datetime.now():
-        #     # if task.end_at and task.end_at < datetime.now():
-        #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
-        #     return
+        if task.max_working_time and (datetime.now() + timedelta(seconds=task.max_working_time)) >= datetime.now():
+            # if task.end_at and task.end_at < datetime.now():
+            logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
+            return
 
         # if task.end_at and task.end_at < datetime.now():
         #     logger.info(f"Задача {task} остановлена, время исполнения превысило {task.max_working_time} cek.")
@@ -133,9 +132,10 @@ class Scheduler:
 
         try:
             result = next(task.run())
+            task.status = Status.IN_PROGRESS
         except StopIteration:
             task.status = Status.SUCCESS
-            logger.info(f'Задача {task.name} завершена со статусом {task.status.name}')
+            logger.info(f'Задача {task.name} {task.tid} завершена со статусом {task.status.name}')
             return
 
         except Exception as e:
@@ -159,14 +159,14 @@ class Scheduler:
 
     def run(self) -> None:
         """
-         Событийный цикл.
+         Цикл планировщика.
         """
         logger.info("Планировщик запущен")
         self.start()
         while self.scheduler_run:
             try:
                 task = self.get_task()
-                self.process_task(task)
+                self.process_task_once(task)
                 time.sleep(0.1)
             except KeyboardInterrupt:
                 logger.info('Работа планировщика завершена')
@@ -207,8 +207,7 @@ class Scheduler:
                         self.add_task(job)
 
             tasks_file.unlink(missing_ok=False)
-            logger.info(f'Состояние задач прочитано из файла {SAVED_TASKS_FILE}, файл удален удален.')
+            logger.info(f'Состояние задач прочитано из файла {SAVED_TASKS_FILE}, файл удален.')
 
     def exit(self):
         self.scheduler_run = False
-

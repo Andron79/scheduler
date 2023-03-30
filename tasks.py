@@ -10,16 +10,12 @@ logger = logging.getLogger(__name__)
 
 def task_1() -> None:
     logger.warning('task_1 started')
-    # time.sleep(2)
-    x = 1 / 0
     yield
-    # time.sleep(4)
     logger.warning('task_1 complete!')
 
 
 def task_2() -> None:
     logger.warning('task_2 started')
-    # p = pathlib.Path()
     directory = pathlib.Path('data')
     if not directory.exists():
         directory.mkdir()
@@ -43,11 +39,9 @@ def stage_3() -> Generator:
         while True:
             data_chunk = (yield)
             print(f"Stage_3: Получено {data_chunk}")
-            return data_chunk
-            # yield data_chunk
+            yield data_chunk
     except GeneratorExit:
-        print("Stage_3: Завершение фабрики")
-        return aa
+        logger.warning("Stage_3: Завершение фабрики")
 
 
 def stage_2() -> Generator:
@@ -56,17 +50,17 @@ def stage_2() -> Generator:
     try:
         while True:
             data_chunk = (yield)
-            print(f"Stage_2: Обработка {data_chunk}")
+            logger.warning(f"Stage_2: Обработка {data_chunk}")
             output.send(data_chunk * 2)
     except GeneratorExit:
         pass
 
 
-def stage_1() -> None:
+def job_factory() -> None:
     output = stage_2()
     output.send(None)
     data = 10
-    print(f"Stage_1: Отправлено {data}")
+    logger.warning(f"Stage_1: Отправлено {data}")
     output.send(data)
     output.close()
     yield
@@ -85,6 +79,6 @@ worker_tasks = {
     'task_3': task_3,
     'stage_3': stage_3,
     'stage_2': stage_2,
-    'stage_1': stage_1,
+    'job_factory': job_factory,
     'api_exact_time': api_exact_time,
 }
