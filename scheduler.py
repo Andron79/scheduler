@@ -163,9 +163,8 @@ class Scheduler:
         """
         tasks_file = pathlib.Path(SAVED_TASKS_FILE)
         if tasks_file.exists():
-            with open('saved_tasks.lock', 'rb') as f:
-                tasks_data = pickle.load(f)
-                if tasks_data:
+            with open(SAVED_TASKS_FILE, 'rb') as f:
+                if tasks_data := pickle.load(f):
                     for task in tasks_data:
                         job = Job(
                             task=worker_tasks.get(task['name'])
